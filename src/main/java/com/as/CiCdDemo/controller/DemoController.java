@@ -17,6 +17,6 @@ public class DemoController {
 
     @GetMapping("/health")
     public ResponseEntity<String> health(){
-        return new ResponseEntity<>("healthyy !!", HttpStatus.ACCEPTED);
+        return ResponseEntity.ok("healthy !");
     }
 }
