@@ -10,4 +10,6 @@ public class CiCdDemoApplication {
 		SpringApplication.run(CiCdDemoApplication.class, args);
 	}
 
+
+
 }
