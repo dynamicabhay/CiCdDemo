@@ -25,7 +25,7 @@ public class runner implements CommandLineRunner {
 
         // creating dummy user
         // creating list of users
-        List<String> list =  List.of("hemendra","ashish","rahul","anurag");
+        List<String> list =  List.of("hemendra","ashish","rahul","anurag","ruchie");
 
 
         userCacheService.cacheUserList(list);
