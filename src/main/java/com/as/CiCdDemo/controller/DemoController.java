@@ -12,7 +12,8 @@ public class DemoController {
 
     @GetMapping("/test")
     public ResponseEntity<String> demoResponse(){
-        return new ResponseEntity<>("hello from master branch !!", HttpStatus.ACCEPTED);
+        return new ResponseEntity<>("hello from development !!", HttpStatus.ACCEPTED);
+
     }
 
     @GetMapping("/health")
