@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: maven:3.9.6-eclipse-temurin-17
+    container: maven:3.9.6-eclipse-temurin-17-slim
     
     steps:
     - name: Checkout code
