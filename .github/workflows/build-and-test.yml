@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: maven:3.9.4-openjdk-17-slim
+    container: maven:3.9.10-amazoncorretto-17
     
     steps:
     - name: Checkout code
