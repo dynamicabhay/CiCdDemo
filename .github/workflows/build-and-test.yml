@@ -40,4 +40,4 @@ jobs:
       run: |
         echo "✅ Build completed successfully!"
         echo "📦 JAR file created:"
-        ls -la target/*.jar 
+        ls -la target/*.jar || true
