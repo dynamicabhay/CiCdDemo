@@ -1,4 +1,4 @@
-package com.as.CiCdDemo;
+package com.as.CiCdDemo.model;
 
 import lombok.*;
 

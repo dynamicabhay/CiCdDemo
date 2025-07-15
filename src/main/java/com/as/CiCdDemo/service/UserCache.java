@@ -1,8 +1,7 @@
 package com.as.CiCdDemo.service;
 
-import com.as.CiCdDemo.User;
+import com.as.CiCdDemo.model.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
