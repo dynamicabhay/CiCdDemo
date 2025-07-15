@@ -15,4 +15,9 @@ public class DemoController {
         return new ResponseEntity<>("hello from development !!", HttpStatus.ACCEPTED);
 
     }
+
+    @GetMapping("/health")
+    public ResponseEntity<String> health(){
+        return ResponseEntity.ok("healthyyy !");
+    }
 }

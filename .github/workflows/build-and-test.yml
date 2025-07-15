@@ -1,0 +1,43 @@
+name: Build and Test
+
+on:
+  pull_request:
+    branches: [ master,development ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: maven:3.9.6-eclipse-temurin-17
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Verify Java and Maven versions
+      run: |
+        java -version
+        mvn -version
+
+    - name: Run tests (includes compilation)
+      run: mvn clean test
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: target/surefire-reports/
+
+
+    - name: Display build summary
+      run: |
+        echo "✅ Build completed successfully!"
+        echo "📦 JAR file created:"
+        ls -la target/*.jar || true
