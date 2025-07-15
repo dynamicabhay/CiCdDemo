@@ -87,6 +87,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
+          echo $SHORT_SHA
           docker build -t $IMAGE_NAME:$SHORT_SHA .
 
       - name: Push Docker Image
