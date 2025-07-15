@@ -60,8 +60,6 @@ jobs:
     env:
       IMAGE_NAME: deadshot007/distroless-image-java
       CONTAINER_NAME: distroless-app
-      SHORT_SHA: ${{github.sha}}
-
 
     steps:
       - name: Checkout Code
@@ -80,18 +78,15 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Use short SHA
-        run: |
-          SHORT_SHA=${SHORT_SHA::7}
-          echo $SHORT_SHA
+        id: meta
+        run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
-
-      - name: Build Docker Image
+      - name: Build & Push Docker Image
+        env:
+          SHORT_SHA: ${{ steps.meta.outputs.short_sha }}
         run: |
           echo $SHORT_SHA
           docker build -t $IMAGE_NAME:$SHORT_SHA .
-
-      - name: Push Docker Image
-        run: |
           docker push $IMAGE_NAME:$SHORT_SHA
 
       - name: Display build summary
