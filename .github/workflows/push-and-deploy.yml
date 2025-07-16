@@ -38,7 +38,6 @@ jobs:
 
       - name: Build & Push Multi-Arch Docker Image
         env:
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
           SHORT_SHA: ${{ steps.meta.outputs.short_sha }}
         run: |
           echo "🔧 Building and pushing image: $IMAGE_NAME:$SHORT_SHA"
