@@ -59,6 +59,7 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: IMAGE_NAME,CONTAINER_NAME,SHORT_SHA
           script: |
             echo "📦 Pulling Docker image"
             docker pull $IMAGE_NAME:$SHORT_SHA
