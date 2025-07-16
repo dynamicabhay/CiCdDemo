@@ -12,7 +12,7 @@ public class DemoController {
 
     @GetMapping("/test")
     public ResponseEntity<String> demoResponse(){
-        return new ResponseEntity<>("hello from development !!", HttpStatus.ACCEPTED);
+        return new ResponseEntity<>("hello from CiCd demo !!", HttpStatus.ACCEPTED);
 
     }
 
