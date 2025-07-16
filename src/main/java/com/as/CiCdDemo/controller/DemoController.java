@@ -18,6 +18,6 @@ public class DemoController {
 
     @GetMapping("/health")
     public ResponseEntity<String> health(){
-        return ResponseEntity.ok("healthyyy !");
+        return ResponseEntity.ok("ping pong !");
     }
 }
