@@ -6,6 +6,7 @@ on:
 
 jobs:
   build:
+    name: Build & Test
     runs-on: ubuntu-latest
     container: maven:3.9.6-eclipse-temurin-17
     
