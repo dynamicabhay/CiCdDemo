@@ -11,7 +11,7 @@ jobs:
 
     env:
       IMAGE_NAME: deadshot007/distroless-image-java
-      CONTAINER_NAME: distroless-app
+      CONTAINER_NAME: distroless-app-java
 
     steps:
       - name: Checkout Code
@@ -30,14 +30,46 @@ jobs:
         id: meta
         run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
-      - name: Build & Push Docker Image
+      - name: Set up QEMU (for cross-arch builds)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & Push Multi-Arch Docker Image
         env:
           SHORT_SHA: ${{ steps.meta.outputs.short_sha }}
         run: |
-          echo $SHORT_SHA
-          docker build -t $IMAGE_NAME:$SHORT_SHA .
-          docker push $IMAGE_NAME:$SHORT_SHA
+          echo "🔧 Building and pushing image: $IMAGE_NAME:$SHORT_SHA"
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag $IMAGE_NAME:$SHORT_SHA \
+            --push \
+            .
 
       - name: Display build summary
         run: |
           echo "✅ image created successfully & pushed to dockerHub !!"
+
+      - name: Deploy on Remote Server via SSH
+        env:
+          SHORT_SHA: ${{ steps.meta.outputs.short_sha }}
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "📦 Pulling Docker image"
+            docker pull $IMAGE_NAME:$SHORT_SHA
+
+            echo "🛑 Stopping old container (if running)"
+            docker stop $CONTAINER_NAME || true
+
+            echo "🧹 Removing old container (if exists)"
+            docker rm $CONTAINER_NAME || true
+
+            echo "🚀 Running new container"
+            docker run -d --name $CONTAINER_NAME -p 8080:8080 $IMAGE_NAME:$SHORT_SHA
+
+            echo "✅ Deployed successfully!"
