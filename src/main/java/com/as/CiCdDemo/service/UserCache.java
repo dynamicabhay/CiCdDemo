@@ -24,16 +24,18 @@ public class UserCache {
     }
 
     public void cacheUserList(List<String> names){
-
-        List<User> userList = new ArrayList<>();
+        /*
+        List<UserDTO> userList = new ArrayList<>();
         for(int i=0; i<names.size(); i++){
-            userList.add(new User(i+6l,names.get(i),26+i,"jaipur"));
+            userList.add(new UserDTO(i+6,names.get(i)));
         }
         Map<String,Object> map = userList.stream().collect(Collectors.toMap(
              u -> "user:"+u.getId(), u -> u)
         );
         redisTemplate.opsForValue().multiSet(map);
         System.out.println("list of user added !!");
+
+         */
     }
 
 
