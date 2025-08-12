@@ -1,6 +1,7 @@
 package com.as.CiCdDemo.service;
 
 import com.as.CiCdDemo.dto.UrlShortnerResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -13,12 +14,16 @@ public class UrlShortenerService {
     public Base62 encoder;
     private Map<Long,String> urlStore;
     private AtomicInteger counter;
-    private String baseUrl = "http://localhost:8080/tiny-url/";
 
-    public UrlShortenerService(Base62 encoder){
+    private String baseUrl;
+
+    public UrlShortenerService(Base62 encoder,@Value("${server.ip}") String serverIp,
+                               @Value("${server.port}") String serverPort){
+
         this.encoder = encoder;
         urlStore = new HashMap<>();
         counter = new AtomicInteger(0);
+        baseUrl = String.format("http://%s:%s/tiny-url/", serverIp, serverPort);
     }
 
     public UrlShortnerResponse process(String url){
