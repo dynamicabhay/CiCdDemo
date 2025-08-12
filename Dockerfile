@@ -11,6 +11,5 @@ COPY target/*.jar app.jar
 
 # Expose the application port (adjust if your app uses a different one)
 EXPOSE 8080
-
 # Define the entrypoint — run the JAR
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
