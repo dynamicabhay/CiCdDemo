@@ -17,13 +17,12 @@ public class UrlShortenerService {
 
     private String baseUrl;
 
-    public UrlShortenerService(Base62 encoder,@Value("${server.ip}") String serverIp,
-                               @Value("${server.port}") String serverPort){
+    public UrlShortenerService(Base62 encoder,@Value("${server.domain}") String domain){
 
         this.encoder = encoder;
         urlStore = new HashMap<>();
         counter = new AtomicInteger(0);
-        baseUrl = String.format("http://%s:%s/tiny-url/", serverIp, serverPort);
+        baseUrl = String.format("https://%s/tiny-url/", domain);
     }
 
     public UrlShortnerResponse process(String url){
