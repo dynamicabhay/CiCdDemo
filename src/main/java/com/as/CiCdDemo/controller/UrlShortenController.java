@@ -29,7 +29,6 @@ public class UrlShortenController {
     @GetMapping("/{shortKey}")
     public ResponseEntity<Void> redirectToLongUrl(@PathVariable String shortKey) {
         // Look up the long URL from our "database"
-        System.out.println("inside redirect " + shortKey);
         if(shortKey == null) return ResponseEntity.notFound().build();
 
         String longUrl = urlShortenerService.getUrl(shortKey.trim());
