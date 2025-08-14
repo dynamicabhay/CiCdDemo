@@ -9,11 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
-@RequestMapping("/tiny-url")
-public class urlShortenController {
+//@RequestMapping("/tiny-url")
+public class UrlShortenController {
 
     @Autowired
     UrlShortenerService urlShortenerService;
@@ -21,7 +20,7 @@ public class urlShortenController {
     @PostMapping("/shorten")
     public ResponseEntity<UrlShortnerResponse> shortenUrl(@RequestBody UrlShortnerRequest request){
        // System.out.println("hello");
-        UrlShortnerResponse response = urlShortenerService.process(request.getUrl());
+        UrlShortnerResponse response = urlShortenerService.process(request);
         return ResponseEntity
                 .status(HttpStatus.ACCEPTED)
                 .body(response);
@@ -30,7 +29,9 @@ public class urlShortenController {
     @GetMapping("/{shortKey}")
     public ResponseEntity<Void> redirectToLongUrl(@PathVariable String shortKey) {
         // Look up the long URL from our "database"
-        String longUrl = urlShortenerService.getUrl(shortKey);
+        if(shortKey == null) return ResponseEntity.notFound().build();
+
+        String longUrl = urlShortenerService.getUrl(shortKey.trim());
 
         if (longUrl != null) {
             // If found, issue an HTTP 301 Permanent Redirect
