@@ -55,4 +55,8 @@ public class GlobalExceptionHandler {
         // ex.printStackTrace();
         return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.", request.getRequestURI());
     }
+
+    public ResponseEntity<Map<String,Object>> handleAliasAlreadyTakenException(AliasAlreadyTakenException ex, HttpServletRequest request){
+        return createErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
+    }
 }

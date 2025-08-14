@@ -9,4 +9,5 @@ import lombok.*;
 @AllArgsConstructor
 public class UrlShortnerRequest {
     String url;
+    String alias;
 }
