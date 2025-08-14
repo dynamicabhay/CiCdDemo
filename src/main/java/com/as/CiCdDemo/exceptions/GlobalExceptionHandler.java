@@ -56,7 +56,15 @@ public class GlobalExceptionHandler {
         return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.", request.getRequestURI());
     }
 
+    @ExceptionHandler(AliasAlreadyTakenException.class)
     public ResponseEntity<Map<String,Object>> handleAliasAlreadyTakenException(AliasAlreadyTakenException ex, HttpServletRequest request){
         return createErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
     }
+
+    @ExceptionHandler(KeyNotFoundException.class)
+    public ResponseEntity<Map<String,Object>> handleAliasAlreadyTakenException(KeyNotFoundException ex, HttpServletRequest request){
+        return createErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
+    }
+
+
 }

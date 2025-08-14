@@ -3,6 +3,7 @@ package com.as.CiCdDemo.service;
 import com.as.CiCdDemo.dto.UrlShortnerRequest;
 import com.as.CiCdDemo.dto.UrlShortnerResponse;
 import com.as.CiCdDemo.exceptions.AliasAlreadyTakenException;
+import com.as.CiCdDemo.exceptions.KeyNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -42,9 +43,8 @@ public class UrlShortenerService {
         return UrlShortnerResponse.builder().shortUrl(shortUrl).build();
     }
 
-    public String getUrl(String key){
+    public String getUrl(String key) throws KeyNotFoundException {
         if(urlStore.containsKey(key)) return urlStore.get(key);
-        long id = encoder.decode(key);
-        return urlStore.get(id);
+        else throw new KeyNotFoundException(key);
     }
 }

@@ -9,11 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 //@RequestMapping("/tiny-url")
-public class urlShortenController {
+public class UrlShortenController {
 
     @Autowired
     UrlShortenerService urlShortenerService;
@@ -30,6 +29,9 @@ public class urlShortenController {
     @GetMapping("/{shortKey}")
     public ResponseEntity<Void> redirectToLongUrl(@PathVariable String shortKey) {
         // Look up the long URL from our "database"
+        System.out.println("inside redirect " + shortKey);
+        if(shortKey == null) return ResponseEntity.notFound().build();
+
         String longUrl = urlShortenerService.getUrl(shortKey.trim());
 
         if (longUrl != null) {
