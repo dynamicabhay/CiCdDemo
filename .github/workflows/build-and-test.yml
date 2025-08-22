@@ -29,6 +29,15 @@ jobs:
     - name: Create Firebase Config File
       run: echo "${{ secrets.FB_CONFIG }}" > ./firebase-config.json
 
+    - name: Debug file content
+      run: |
+          echo "--- Listing files to confirm creation ---"
+          ls -l
+          echo "--- Displaying file content (first 100 chars) ---"
+          head -c 100 ./firebase-config.json
+          echo ""
+          echo "--- End of file content ---"
+
     - name: Run tests (includes compilation)
       run: mvn clean test
       env:
