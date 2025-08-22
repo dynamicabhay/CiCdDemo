@@ -1,6 +1,7 @@
 package com.as.CiCdDemo.security.config;
 
 import com.as.CiCdDemo.exceptions.CustomAuthenticationEntryPoint;
+import com.as.CiCdDemo.security.FirebaseAuthFilter;
 import com.as.CiCdDemo.security.JwtAuthFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -36,10 +37,12 @@ public class SecurityConfig {
     JwtAuthFilter jwtAuthFilter;
     UserDetailsService userDetailsService;
     CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserDetailsService userDetailsService,CustomAuthenticationEntryPoint customAuthenticationEntryPoint){
+    FirebaseAuthFilter firebaseAuthFilter;
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserDetailsService userDetailsService,CustomAuthenticationEntryPoint customAuthenticationEntryPoint,FirebaseAuthFilter firebaseAuthFilter){
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
+        this.firebaseAuthFilter = firebaseAuthFilter;
     }
 
 
@@ -50,13 +53,13 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable()) // Disable CSRF protection, common for stateless APIs
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/**") .permitAll()
-                        .anyRequest().authenticated()
+                        //.requestMatchers("/public/**").permitAll()
+                        .anyRequest().permitAll()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(customAuthenticationEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(firebaseAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

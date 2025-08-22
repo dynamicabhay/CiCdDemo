@@ -12,7 +12,8 @@ jobs:
     env:
       IMAGE_NAME: deadshot007/distroless-image-java
       CONTAINER_NAME: distroless-app-java
-
+      SECRET_PATH_VM: /home/isagi/.secrets
+      SECRET_PATH_CON: /app/.secrets
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -59,7 +60,7 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: IMAGE_NAME,CONTAINER_NAME,SHORT_SHA
+          envs: IMAGE_NAME,CONTAINER_NAME,SHORT_SHA,SECRET_PATH_VM,SECRET_PATH_CON
           script: |
             echo "📦 Pulling Docker image"
             docker pull $IMAGE_NAME:$SHORT_SHA
@@ -71,6 +72,11 @@ jobs:
             docker rm $CONTAINER_NAME || true
 
             echo "🚀 Running new container"
-            docker run -d --name $CONTAINER_NAME -p 8080:8080 $IMAGE_NAME:$SHORT_SHA
+            docker run -d --name $CONTAINER_NAME \
+              -p 8080:8080 \
+              -v $SECRET_PATH_VM:$SECRET_PATH_CON:ro \
+              -e FB_CONFIG_PATH=$SECRET_PATH_CON \
+              -e SPRING_PROFILES_ACTIVE=prod \
+              $IMAGE_NAME:$SHORT_SHA
 
             echo "✅ Deployed successfully!"

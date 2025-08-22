@@ -2,6 +2,7 @@ package com.as.CiCdDemo.controller;
 
 import com.as.CiCdDemo.dto.UrlShortnerRequest;
 import com.as.CiCdDemo.dto.UrlShortnerResponse;
+import com.as.CiCdDemo.service.RateLimiterNonAuthenticatedService;
 import com.as.CiCdDemo.service.UrlShortenerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,9 @@ public class UrlShortenController {
     @Autowired
     UrlShortenerService urlShortenerService;
 
+    @Autowired
+    RateLimiterNonAuthenticatedService rs;
+
     @PostMapping("/shorten")
     public ResponseEntity<UrlShortnerResponse> shortenUrl(@RequestBody UrlShortnerRequest request){
        // System.out.println("hello");
@@ -26,7 +30,7 @@ public class UrlShortenController {
                 .body(response);
     }
 
-    @GetMapping("/{shortKey}")
+    @GetMapping("/s/{shortKey}")
     public ResponseEntity<Void> redirectToLongUrl(@PathVariable String shortKey) {
         // Look up the long URL from our "database"
         if(shortKey == null) return ResponseEntity.notFound().build();
@@ -42,6 +46,12 @@ public class UrlShortenController {
             // If not found, return an HTTP 404 Not Found response
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping("/flush")
+    public String flush(){
+        rs.flush();
+        return "done";
     }
 
 }
