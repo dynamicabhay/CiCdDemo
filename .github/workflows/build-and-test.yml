@@ -27,7 +27,7 @@ jobs:
         mvn -version
 
     - name: Create Firebase Config File
-      run: echo "${{ secrets.FB_CONFIG }}" > ./firebase-config.json
+      run: printf "%s" "${{ secrets.FB_CONFIG }}" > ./firebase-config.json
 
     - name: Debug file content
       run: |
