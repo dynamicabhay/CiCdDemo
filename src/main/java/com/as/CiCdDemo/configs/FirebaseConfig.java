@@ -11,23 +11,32 @@ import org.springframework.context.annotation.Configuration;
 import javax.annotation.PostConstruct;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 @Configuration
 @Slf4j
 public class FirebaseConfig {
 
     @Value("${fb.config.path}")
-    public String FbConfigPath;
+    public String fbConfigPath;
 
     @PostConstruct
-    public void init() throws IOException {
-        log.debug("the path of file is :: " + FbConfigPath);
-        if (FirebaseApp.getApps().isEmpty()) {
-            FileInputStream serviceAccount = new FileInputStream(FbConfigPath);
-            FirebaseOptions options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .build();
-            FirebaseApp.initializeApp(options);
+    public void init() {
+        try {
+            String fileContent = new String(Files.readAllBytes(Paths.get(fbConfigPath)));
+            log.info("===================== FIREBASE CONFIG FILE CONTENT =====================");
+            log.info(fileContent);
+            log.info("========================================================================");
+            if (FirebaseApp.getApps().isEmpty()) {
+                FileInputStream serviceAccount = new FileInputStream(fbConfigPath);
+                FirebaseOptions options = FirebaseOptions.builder()
+                        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                        .build();
+                FirebaseApp.initializeApp(options);
+            }
+        }catch (Exception ex){
+            log.error("!!!!!!!!!! CRITICAL ERROR INITIALIZING FIREBASE !!!!!!!!!", ex);
         }
     }
 }
