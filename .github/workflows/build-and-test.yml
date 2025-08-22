@@ -26,8 +26,13 @@ jobs:
         java -version
         mvn -version
 
+    - name: Create Firebase Config File
+      run: echo "${{ secrets.FB_CONFIG }}" > ./firebase-config.json
+
     - name: Run tests (includes compilation)
       run: mvn clean test
+      env:
+        FB_CONFIG_PATH: ./firebase-config.json
 
     - name: Upload test results
       uses: actions/upload-artifact@v4

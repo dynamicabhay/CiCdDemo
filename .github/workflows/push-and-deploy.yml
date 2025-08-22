@@ -76,7 +76,6 @@ jobs:
               -p 8080:8080 \
               -v $SECRET_PATH_VM:$SECRET_PATH_CON:ro \
               -e FB_CONFIG_PATH=$SECRET_PATH_CON \
-              -e SPRING_PROFILES_ACTIVE=prod \
               $IMAGE_NAME:$SHORT_SHA
 
             echo "✅ Deployed successfully!"
