@@ -25,7 +25,7 @@ public class UrlShortenerService {
         this.encoder = encoder;
         urlStore = new HashMap<>();
         counter = new AtomicInteger(0);
-        baseUrl = String.format("https://%s/", domain);
+        baseUrl = String.format("https://%s/s/", domain);
     }
 
     public UrlShortnerResponse process(UrlShortnerRequest request) throws AliasAlreadyTakenException {
