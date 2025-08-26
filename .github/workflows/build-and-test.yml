@@ -42,6 +42,8 @@ jobs:
       run: mvn clean test
       env:
         FB_CONFIG_PATH: ./firebase-config.json
+        DB_USERNAME: ${{ secrets.DB_USERNAME }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
     - name: Upload test results
       uses: actions/upload-artifact@v4

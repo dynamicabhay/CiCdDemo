@@ -24,10 +24,8 @@ public class FirebaseConfig {
     @PostConstruct
     public void init() {
         try {
-            String fileContent = new String(Files.readAllBytes(Paths.get(fbConfigPath)));
-            log.info("===================== FIREBASE CONFIG FILE CONTENT =====================");
-            log.info(fileContent);
-            log.info("========================================================================");
+           // String fileContent = new String(Files.readAllBytes(Paths.get(fbConfigPath)));
+
             if (FirebaseApp.getApps().isEmpty()) {
                 FileInputStream serviceAccount = new FileInputStream(fbConfigPath);
                 FirebaseOptions options = FirebaseOptions.builder()

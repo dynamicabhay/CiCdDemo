@@ -38,8 +38,9 @@ public class UrlShortenController {
         String longUrl = urlShortenerService.getUrl(shortKey.trim());
 
         if (longUrl != null) {
+
             // If found, issue an HTTP 301 Permanent Redirect
-            return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+            return ResponseEntity.status(HttpStatus.FOUND)
                     .location(URI.create(longUrl))
                     .build();
         } else {
