@@ -76,6 +76,8 @@ jobs:
               -p 8080:8080 \
               -v $SECRET_PATH_VM:$SECRET_PATH_CON:ro \
               -e FB_CONFIG_PATH=$SECRET_PATH_CON \
+              -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
+              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
               $IMAGE_NAME:$SHORT_SHA
 
             echo "✅ Deployed successfully!"
