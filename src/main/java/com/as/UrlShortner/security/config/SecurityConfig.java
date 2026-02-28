@@ -50,6 +50,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Disable CSRF protection, common for stateless APIs
                 .authorizeHttpRequests(auth -> auth
                         //.requestMatchers("/public/**").permitAll()
+                        .requestMatchers("/shorten/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(customAuthenticationEntryPoint))

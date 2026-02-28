@@ -6,6 +6,9 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.java.Log;
+import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -15,6 +18,7 @@ import java.io.IOException;
 import java.util.Collections;
 
 @Component
+@Slf4j
 public class FirebaseAuthFilter extends OncePerRequestFilter {
 
     @Override
@@ -32,16 +36,19 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
                 String uid = decodedToken.getUid();
                 String email = decodedToken.getEmail();
 
-                decodedToken.getClaims().entrySet().stream().forEach(entry -> {
+                /*decodedToken.getClaims().entrySet().stream().forEach(entry -> {
                     System.out.println(entry.getKey() + " : " + entry.getValue());
                 });
-                System.out.println("firebase uid: " + uid);
-                System.out.println("email : " + email);
+                log.info("Bearer Token: " + token);
+                log.info("firebase uid: " + uid);
+                log.info("email : " + email); */
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(uid, null, Collections.emptyList());
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception e) {
+
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
