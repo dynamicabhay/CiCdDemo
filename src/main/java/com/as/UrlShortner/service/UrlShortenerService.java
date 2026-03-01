@@ -57,9 +57,7 @@ public class UrlShortenerService {
 
             UrlMappings mapping = urlMappingRepository.findByShortKey(key.trim()).orElseThrow(() -> new RuntimeException());
             mapping.setVisitCount(mapping.getVisitCount()+1);
-
-            System.out.println("shortKey: " + key);
-
+           // System.out.println("shortKey: " + key);
             return mapping.getOriginalUrl();
 
     }
