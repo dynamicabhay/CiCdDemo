@@ -73,6 +73,7 @@ jobs:
 
             echo "🚀 Running new container"
             docker run -d --name $CONTAINER_NAME \
+              --network isagi_default \
               -p 8080:8080 \
               -v $SECRET_PATH_VM:$SECRET_PATH_CON:ro \
               -e FB_CONFIG_PATH=$SECRET_PATH_CON \
