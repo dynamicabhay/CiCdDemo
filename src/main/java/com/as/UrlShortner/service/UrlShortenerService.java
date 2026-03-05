@@ -8,10 +8,13 @@ import com.as.UrlShortner.repository.UrlMappingRepository;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -21,13 +24,15 @@ public class UrlShortenerService {
     private UrlMappingRepository urlMappingRepository;
     private String baseUrl;
     EntityManager entityManager;
+    private StringRedisTemplate redisTemplate;
 
-    public UrlShortenerService(Base62 encoder,@Value("${server.domain}") String domain,UrlMappingRepository urlMappingRepository,EntityManager entityManager){
+    public UrlShortenerService(Base62 encoder,@Value("${server.domain}") String domain,UrlMappingRepository urlMappingRepository,EntityManager entityManager,StringRedisTemplate redisTemplate){
 
         this.encoder = encoder;
         this.urlMappingRepository = urlMappingRepository;
         baseUrl = String.format("https://%s/s/", domain);
         this.entityManager = entityManager;
+        this.redisTemplate = redisTemplate;
     }
 
     @Transactional
@@ -54,11 +59,31 @@ public class UrlShortenerService {
     @Transactional
     public String getUrl(String key) throws KeyNotFoundException {
         if(key == null || key.isBlank()) throw new RuntimeException("URL not found ");
+        try {
+            String redisKey = "URL:" + key;
+            String result = redisTemplate.opsForValue().get(redisKey);
+            if("NOT_FOUND".equalsIgnoreCase(result)) return null;
 
-            UrlMappings mapping = urlMappingRepository.findByShortKey(key.trim()).orElseThrow(() -> new RuntimeException());
-            mapping.setVisitCount(mapping.getVisitCount()+1);
-           // System.out.println("shortKey: " + key);
-            return mapping.getOriginalUrl();
+            if (result == null) {
+                // cache miss scenario
+                log.info("cache miss scenario key: " + key);
+                // fetch from DB and write back to cache synchronously
+                return urlMappingRepository.findByShortKey(key)
+                        .map(url -> {
+                            redisTemplate.opsForValue().set(redisKey, url.getOriginalUrl(), 24, TimeUnit.HOURS);
+                            return url.getOriginalUrl();
+                        })
+                        .orElseGet(() -> {
+                            // updating cache with NOT_FOUND to protect the DB from DDos
+                            redisTemplate.opsForValue().set(redisKey, "NOT_FOUND", 1, TimeUnit.HOURS);
+                            return null;
+                        });
+            }
+            log.info("cache hit key: " + key);
+            return result;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
     }
 

@@ -3,6 +3,7 @@ package com.as.UrlShortner.security.config;
 import com.as.UrlShortner.exceptions.CustomAuthenticationEntryPoint;
 import com.as.UrlShortner.security.FirebaseAuthFilter;
 import com.as.UrlShortner.security.JwtAuthFilter;
+import com.as.UrlShortner.security.RateLimiterFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -34,11 +35,13 @@ public class SecurityConfig {
     UserDetailsService userDetailsService;
     CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     FirebaseAuthFilter firebaseAuthFilter;
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserDetailsService userDetailsService,CustomAuthenticationEntryPoint customAuthenticationEntryPoint,FirebaseAuthFilter firebaseAuthFilter){
+    RateLimiterFilter rateLimiterFilter;
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserDetailsService userDetailsService,CustomAuthenticationEntryPoint customAuthenticationEntryPoint,FirebaseAuthFilter firebaseAuthFilter,RateLimiterFilter rateLimiterFilter){
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
         this.firebaseAuthFilter = firebaseAuthFilter;
+        this.rateLimiterFilter = rateLimiterFilter;
     }
 
 
@@ -56,7 +59,8 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(customAuthenticationEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(firebaseAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(firebaseAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(rateLimiterFilter, FirebaseAuthFilter.class);
 
         return http.build();
     }

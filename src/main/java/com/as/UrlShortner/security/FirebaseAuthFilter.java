@@ -44,7 +44,7 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
                 log.info("email : " + email); */
 
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(uid, null, Collections.emptyList());
+                        new UsernamePasswordAuthenticationToken(email, null, Collections.emptyList());
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception e) {
