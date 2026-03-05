@@ -25,7 +25,7 @@ public class runner implements CommandLineRunner {
     public void run(String... args) throws Exception {
 
         redisTemplate.opsForValue().set("Ping","Pong");
-        String result = redisTemplate.opsForValue().get("test-key");
+        String result = redisTemplate.opsForValue().get("Ping");
         System.out.println("================== Redis is connected: ==============" + result);
 
     }
