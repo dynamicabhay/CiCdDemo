@@ -23,7 +23,7 @@ public class UrlShortenController {
 
     @PostMapping("/shorten")
     public ResponseEntity<UrlShortnerResponse> shortenUrl(@RequestBody UrlShortnerRequest request){
-       // System.out.println("hello");
+
         UrlShortnerResponse response = urlShortenerService.process(request);
         return ResponseEntity
                 .status(HttpStatus.ACCEPTED)
