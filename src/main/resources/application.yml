@@ -1,0 +1,97 @@
+spring:
+    application:
+        name: CiCdDemo
+    data:
+        redis:
+            host: redis
+            port: 6379
+            timeout: 30
+
+    datasource:
+        hikari:
+            connection-timeout: 20000
+            idle-timeout: 300000
+            keepalive-time: 300000
+            max-lifetime: 540000
+            maximum-pool-size: 10
+            minimum-idle: 2
+            validation-timeout: 5000
+        password: ${DB_PASSWORD}
+        url: jdbc:postgresql://74.225.174.33:5433/testing
+        username: ${DB_USERNAME}
+    jpa:
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.PostgreSQLDialect
+        show-sql: true
+    profiles:
+        active: dev
+
+
+fb:
+    config:
+        path: ${FB_CONFIG_PATH:/Users/abhay/google/firebase/tiny-lane-config.json}
+id:
+    range:
+        increment:
+            window:
+                size: 100000
+jwt:
+    expiration: 86400000
+    secret: YmFzZTY0LWVuY29kZWQtc3Ryb25nLXNlY3JldC1rZXktZm9yLWp3dC1hdXRoZW50aWNhdGlvbg==
+
+rate:
+    limit:
+        redirection:
+            window:
+                allowed:
+                    requests: 50
+                size: 60
+        shorten:
+            allowed:
+                requests: 50
+            window:
+                size: 86400
+server:
+    domain: tiny-lane.duckdns.org:8081
+    port: 8080
+
+
+
+total:
+    api:
+        request:
+            allowed: 5
+
+resilience4j.circuitbreaker:
+    configs:
+        default:
+            registerHealthIndicator: true
+            slidingWindowSize: 10
+            minimumNumberOfCalls: 5
+            permittedNumberOfCallsInHalfOpenState: 3
+            automaticTransitionFromOpenToHalfOpenEnabled: true
+            waitDurationInOpenState: 8s
+            failureRateThreshold: 50
+            eventConsumerBufferSize: 10
+            recordExceptions:
+                - org.springframework.data.redis.RedisConnectionFailureException
+                - org.springframework.dao.QueryTimeoutException
+                - io.lettuce.core.RedisException
+                - io.lettuce.core.RedisCommandTimeoutException
+                - java.util.concurrent.TimeoutException
+                - java.io.IOException
+    instances:
+        redis:
+            baseConfig: default
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health, circuitbreakers, circuitbreakerevents
+    endpoint:
+        circuitbreakers:
+            enabled: true
+        circuitbreakerevents:
+            enabled: true
