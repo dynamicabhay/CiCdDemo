@@ -9,6 +9,12 @@ WORKDIR /app
 # Copy the built JAR from your local machine into the container
 COPY target/*.jar app.jar
 
+# Copy the otel agent in CWD
+COPY opentelemetry-javaagent.jar .
+
+# Set environment variable to load the agent automatically
+ENV JAVA_TOOL_OPTIONS="-javaagent:/app/opentelemetry-javaagent.jar"
+
 # Expose the application port (adjust if your app uses a different one)
 EXPOSE 8080
 # Define the entrypoint — run the JAR
