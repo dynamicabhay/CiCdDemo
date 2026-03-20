@@ -21,6 +21,10 @@ jobs:
       - name: Package application
         run: mvn package -DskipTests
 
+      - name: Download OpenTelemetry Java Agent
+        run: |
+          curl -L -o opentelemetry-javaagent.jar https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -74,11 +78,20 @@ jobs:
             echo "🚀 Running new container"
             docker run -d --name $CONTAINER_NAME \
               --network isagi_default \
+              --network observability \
               -p 8080:8080 \
               -v $SECRET_PATH_VM:$SECRET_PATH_CON:ro \
               -e FB_CONFIG_PATH=$SECRET_PATH_CON \
               -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
               -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              -e OTEL_SERVICE_NAME=url-shortener \
+              -e OTEL_METRICS_EXPORTER=prometheus \
+              -e OTEL_EXPORTER_PROMETHEUS_PORT=9464 \
+              -e OTEL_TRACES_EXPORTER=otlp \
+              -e OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://jaeger:4317 \
+              -e OTEL_LOGS_EXPORTER=otlp \
+              -e OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://loki:4318 \
+              -e OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf \
               $IMAGE_NAME:$SHORT_SHA
 
             echo "✅ Deployed successfully!"
