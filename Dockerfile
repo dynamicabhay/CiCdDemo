@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Use Distroless Java 17 runtime (Debian 12 base)
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 
 # Set working directory
 WORKDIR /app
