@@ -17,6 +17,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
+import static net.logstash.logback.argument.StructuredArguments.keyValue;
+
 @Component
 @Slf4j
 public class FirebaseAuthFilter extends OncePerRequestFilter {
@@ -25,35 +27,81 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException,IOException {
+        long startTime = System.currentTimeMillis();
+        String method = request.getMethod();
+        String endpoint = request.getRequestURI();
 
-        String header = request.getHeader("Authorization");
-        if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
-            try {
-                FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
+        try {
+            log.info("Request started",
+                    keyValue("event", "REQUEST_START"),
+                    keyValue("endpoint", endpoint),
+                    keyValue("method", method)
+            );
 
-                // You get uid here
-                String uid = decodedToken.getUid();
-                String email = decodedToken.getEmail();
+            String header = request.getHeader("Authorization");
+            if (header != null && header.startsWith("Bearer ")) {
+                String token = header.substring(7);
+                try {
+                    FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
+                    String uid = decodedToken.getUid();
+                    String email = decodedToken.getEmail();
 
-                /*decodedToken.getClaims().entrySet().stream().forEach(entry -> {
-                    System.out.println(entry.getKey() + " : " + entry.getValue());
-                });
-                log.info("Bearer Token: " + token);
-                log.info("firebase uid: " + uid);
-                log.info("email : " + email); */
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(email, null, Collections.emptyList());
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(email, null, Collections.emptyList());
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            } catch (Exception e) {
+                    // AUTH SUCCESS
+                    log.info("Authentication successful",
+                            keyValue("event", "AUTH_SUCCESS"),
+                            keyValue("userId", uid),
+                            keyValue("email", email)
+                    );
+                } catch (Exception e) {
+                    //  AUTH FAILURE
+                    log.warn("Authentication failed",
+                            keyValue("event", "AUTH_FAILURE"),
+                            keyValue("errorType", e.getClass().getSimpleName()),
+                            keyValue("error_message", e.getMessage())
+                    );
 
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
+                }
+            }else{
+                //  NO TOKEN (optional depending on your design)
+                log.warn("Missing or invalid Authorization header",
+                        keyValue("event", "AUTH_HEADER_MISSING")
+                );
             }
-        }
 
-        filterChain.doFilter(request, response);
+            filterChain.doFilter(request, response);
+        } catch (Exception ex) {
+            // 🔴 REQUEST FAILURE (catch anything unexpected)
+            log.error("Request failed",
+                    keyValue("event", "REQUEST_FAILED"),
+                    keyValue("endpoint", endpoint),
+                    keyValue("errorType", ex.getClass().getSimpleName()),
+                    keyValue("error_message", ex.getMessage()),
+                    ex
+            );
+
+            throw ex;
+        }
+        finally {
+            long duration = System.currentTimeMillis() - startTime;
+
+            //  EXIT LOG (always runs)
+            log.info("Request completed",
+                    keyValue("event", "REQUEST_COMPLETED"),
+                    keyValue("endpoint", endpoint),
+                    keyValue("method", method),
+                    keyValue("status", response.getStatus()),
+                    keyValue("duration", duration)
+            );
+
+            // Optional cleanup
+            SecurityContextHolder.clearContext();
+        }
     }
 }

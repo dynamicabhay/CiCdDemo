@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 import java.util.List;
 
+import static net.logstash.logback.argument.StructuredArguments.keyValue;
+
 @Component
 @AllArgsConstructor
 @Slf4j
@@ -17,28 +19,56 @@ public class RedisRateLimit {
 
     @CircuitBreaker(name="redis", fallbackMethod = "checkFallback")
     public boolean check(String identifier, String prefix, long windowSize, long limit){
-        StringBuilder currentKeySb = new StringBuilder();
-        StringBuilder previousKeySb = new StringBuilder();
+
         long now = System.currentTimeMillis() / 1000;
         long currentWindowStartTime = (now / windowSize)*(windowSize);
         long prevWindowStartTime = currentWindowStartTime - windowSize;
 
-        String curKey = currentKeySb.append("rate_limit").append(":").append(prefix)
-                .append(":").append(identifier).append(":").append(currentWindowStartTime).toString();
-        String prevKey = previousKeySb.append("rate_limit").append(":").append(prefix)
-                .append(":").append(identifier).append(":").append(prevWindowStartTime).toString();
-
-       /* System.out.println("currentKey: " + curKey);
-        System.out.println("prevKey: " + prevKey);*/
+        String curKey = "rate_limit:" + prefix + ":" + identifier + ":" + currentWindowStartTime;
+        String prevKey = "rate_limit:" + prefix + ":" + identifier + ":" + prevWindowStartTime;
         List<String> keys = Arrays.asList(curKey,prevKey);
-        //System.out.println("Redis Script Output: " + redisScript.getResultType());
-        String result = redisTemplate.execute(redisScript,keys,String.valueOf(now),String.valueOf(windowSize),String.valueOf(limit));
-        //System.out.println("script result: " + result);
-        return "1".equals(result);
+
+        try {
+            String result = redisTemplate.execute(redisScript, keys, String.valueOf(now), String.valueOf(windowSize), String.valueOf(limit));
+            boolean allowed = "1".equals(result);
+
+            // Decision log (IMPORTANT)
+            log.info("Rate limit decision",
+                    keyValue("event", "RATE_LIMIT_DECISION"),
+                    keyValue("prefix", prefix),
+                    keyValue("identifier", identifier),
+                    keyValue("allowed", allowed),
+                    keyValue("limit", limit),
+                    keyValue("windowSize", windowSize)
+            );
+
+            return allowed;
+        } catch (Exception ex) {
+            // Redis failure
+            log.error("Redis rate limit execution failed",
+                    keyValue("event", "REDIS_FAILURE"),
+                    keyValue("prefix", prefix),
+                    keyValue("identifier", identifier),
+                    keyValue("errorType", ex.getClass().getSimpleName()),
+                    keyValue("error_message", ex.getMessage()),
+                    ex
+            );
+
+            throw ex;
+
+        }
     }
 
     private boolean checkFallback(String identifier, String prefix, long windowSize, long limit,Exception ex){
-        log.error("Redis circuit breaker triggered for identifier: {}, prefix: {}. Allowing request as fallback.", identifier, prefix);
-        return true;
+        log.error("Redis circuit breaker triggered - allowing request",
+                keyValue("event", "REDIS_CB_FALLBACK"),
+                keyValue("prefix", prefix),
+                keyValue("identifier", identifier),
+                keyValue("fallback", "ALLOW"),
+                keyValue("errorType", ex.getClass().getSimpleName()),
+                keyValue("error_message", ex.getMessage())
+        );
+
+        return true; // fail open
     }
 }
