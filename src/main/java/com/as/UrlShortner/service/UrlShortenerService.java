@@ -16,8 +16,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static net.logstash.logback.argument.StructuredArguments.keyValue;
-
 @Service
 @Slf4j
 public class UrlShortenerService {
@@ -46,30 +44,40 @@ public class UrlShortenerService {
             long nextId = idGeneratorService.getNextid();
             String originalUrl = request.getUrl().trim();
             String key = encoder.encode(nextId);
-            UrlMappings newUrl = new UrlMappings(originalUrl,Instant.now(),key,nextId);
 
+            UrlMappings newUrl = new UrlMappings(originalUrl, Instant.now(), key, nextId);
             UrlMappings entityWithId = urlMappingRepository.save(newUrl);
 
-            log.info("Short URL created",
-                    keyValue("event", "URL_CREATED"),
-                    keyValue("shortCode", key)
-            );
+            // ✅ URL CREATED
+            log.atInfo()
+                    .addKeyValue("event", "URL_CREATED")
+                    .addKeyValue("shortCode", key)
+                    .log("Short URL created");
 
             return UrlShortnerResponse.builder()
                     .shortUrl(baseUrl + key)
                     .build();
 
-
         } catch (Exception ex) {
 
-            log.error("{} is not stored in DB", request.getUrl());
+            // 🔴 DB FAILURE
+            log.atError()
+                    .addKeyValue("event", "URL_CREATION_FAILED")
+                    .addKeyValue("originalUrl", request.getUrl())
+                    .addKeyValue("errorType", ex.getClass().getSimpleName())
+                    .addKeyValue("error_message", ex.getMessage())
+                    .log("URL not stored in DB", ex);
+
             throw ex;
         }
     }
 
     @Transactional
     public String getUrl(String key) throws KeyNotFoundException {
-        if(key == null || key.isBlank()) throw new RuntimeException("URL not found ");
+
+        if (key == null || key.isBlank())
+            throw new RuntimeException("URL not found");
+
         String redisKey = "URL:" + key;
 
         try {
@@ -77,12 +85,12 @@ public class UrlShortenerService {
             String result = redisTemplate.opsForValue().get(redisKey);
 
             // 🟢 Cache HIT
-            if (result != null) {
+            if (result != null && !"NOT_FOUND".equalsIgnoreCase(result)) {
 
-                log.info("Cache hit",
-                        keyValue("event", "CACHE_HIT"),
-                        keyValue("shortCode", key)
-                );
+                log.atInfo()
+                        .addKeyValue("event", "CACHE_HIT")
+                        .addKeyValue("shortCode", key)
+                        .log("Cache hit");
 
                 return result;
             }
@@ -90,19 +98,19 @@ public class UrlShortenerService {
             // 🔴 Cached NOT_FOUND
             if ("NOT_FOUND".equalsIgnoreCase(result)) {
 
-                log.info("Cache negative hit",
-                        keyValue("event", "CACHE_NEGATIVE_HIT"),
-                        keyValue("shortCode", key)
-                );
+                log.atInfo()
+                        .addKeyValue("event", "CACHE_NEGATIVE_HIT")
+                        .addKeyValue("shortCode", key)
+                        .log("Cache negative hit");
 
                 return null;
             }
 
             // 🟡 Cache MISS
-            log.info("Cache miss",
-                    keyValue("event", "CACHE_MISS"),
-                    keyValue("shortCode", key)
-            );
+            log.atInfo()
+                    .addKeyValue("event", "CACHE_MISS")
+                    .addKeyValue("shortCode", key)
+                    .log("Cache miss");
 
             // 🔄 Fetch from DB
             return urlMappingRepository.findByShortKey(key)
@@ -111,10 +119,10 @@ public class UrlShortenerService {
                         redisTemplate.opsForValue()
                                 .set(redisKey, url.getOriginalUrl(), 24, TimeUnit.HOURS);
 
-                        log.info("DB hit and cache updated",
-                                keyValue("event", "DB_HIT"),
-                                keyValue("shortCode", key)
-                        );
+                        log.atInfo()
+                                .addKeyValue("event", "DB_HIT")
+                                .addKeyValue("shortCode", key)
+                                .log("DB hit and cache updated");
 
                         return url.getOriginalUrl();
                     })
@@ -123,26 +131,26 @@ public class UrlShortenerService {
                         redisTemplate.opsForValue()
                                 .set(redisKey, "NOT_FOUND", 1, TimeUnit.HOURS);
 
-                        log.warn("URL not found",
-                                keyValue("event", "URL_NOT_FOUND"),
-                                keyValue("shortCode", key)
-                        );
+                        log.atWarn()
+                                .addKeyValue("event", "URL_NOT_FOUND")
+                                .addKeyValue("shortCode", key)
+                                .log("URL not found");
 
                         return null;
                     });
+
         } catch (Exception ex) {
 
             // 🔴 Redis / DB failure
-            log.error("Get URL failed",
-                    keyValue("event", "GET_URL_FAILURE"),
-                    keyValue("shortCode", key),
-                    keyValue("errorType", ex.getClass().getSimpleName()),
-                    keyValue("message", ex.getMessage()),
-                    ex
-            );
+            log.atError()
+                    .addKeyValue("event", "GET_URL_FAILURE")
+                    .addKeyValue("shortCode", key)
+                    .addKeyValue("errorType", ex.getClass().getSimpleName())
+                    .addKeyValue("error_message", ex.getMessage())
+                    .log("Get URL failed", ex);
+
             throw new RuntimeException(ex);
         }
-
     }
 
 
