@@ -17,8 +17,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
-import static net.logstash.logback.argument.StructuredArguments.keyValue;
-
 @Component
 @Slf4j
 public class FirebaseAuthFilter extends OncePerRequestFilter {
