@@ -32,11 +32,12 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
         String endpoint = request.getRequestURI();
 
         try {
-            log.info("Request started",
-                    keyValue("event", "REQUEST_START"),
-                    keyValue("endpoint", endpoint),
-                    keyValue("method", method)
-            );
+            log.atInfo()
+                    .addKeyValue("event", "REQUEST_START")
+                    .addKeyValue("endpoint", endpoint)
+                    .addKeyValue("method", method)
+                    .log("Request started");
+
 
             String header = request.getHeader("Authorization");
             if (header != null && header.startsWith("Bearer ")) {
@@ -52,53 +53,58 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authentication);
 
                     // AUTH SUCCESS
-                    log.info("Authentication successful",
-                            keyValue("event", "AUTH_SUCCESS"),
-                            keyValue("userId", uid),
-                            keyValue("email", email)
-                    );
+                    log.atInfo()
+                            .addKeyValue("event", "AUTH_SUCCESS")
+                            .addKeyValue("userId", uid)
+                            .addKeyValue("email", email)
+                            .log("Authentication successful");
+
                 } catch (Exception e) {
                     //  AUTH FAILURE
-                    log.warn("Authentication failed",
-                            keyValue("event", "AUTH_FAILURE"),
-                            keyValue("errorType", e.getClass().getSimpleName()),
-                            keyValue("error_message", e.getMessage())
-                    );
+                    log.atWarn()
+                            .addKeyValue("event", "AUTH_FAILURE")
+                            .addKeyValue("errorType", e.getClass().getSimpleName())
+                            .addKeyValue("error_message", e.getMessage())
+                            .log("Authentication failed");
 
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     return;
                 }
             }else{
                 //  NO TOKEN (optional depending on your design)
-                log.warn("Missing or invalid Authorization header",
-                        keyValue("event", "AUTH_HEADER_MISSING")
-                );
+                log.atWarn()
+                        .addKeyValue("event", "AUTH_HEADER_MISSING")
+                        .log("Missing or invalid Authorization header");
+
+
             }
 
             filterChain.doFilter(request, response);
         } catch (Exception ex) {
             // 🔴 REQUEST FAILURE (catch anything unexpected)
-            log.error("Request failed",
-                    keyValue("event", "REQUEST_FAILED"),
-                    keyValue("endpoint", endpoint),
-                    keyValue("errorType", ex.getClass().getSimpleName()),
-                    keyValue("error_message", ex.getMessage()),
-                    ex
-            );
-
+            log.atError()
+                    .addKeyValue("event", "REQUEST_FAILED")
+                    .addKeyValue("endpoint", endpoint)
+                    .addKeyValue("errorType", ex.getClass().getSimpleName())
+                    .addKeyValue("error_message", ex.getMessage())
+                    .log("Request Failed", ex);
             throw ex;
         }
         finally {
             long duration = System.currentTimeMillis() - startTime;
 
             //  EXIT LOG (always runs)
-            log.info("Request completed",
-                    keyValue("event", "REQUEST_COMPLETED"),
-                    keyValue("endpoint", endpoint),
-                    keyValue("method", method),
-                    keyValue("status", response.getStatus()),
-                    keyValue("duration", duration)
-            );
+            log.atInfo()
+                    .addKeyValue("event", "REQUEST_COMPLETED")
+                    .addKeyValue("endpoint", endpoint)
+                    .addKeyValue("method", method)
+                    .addKeyValue("status", response.getStatus())
+                    .addKeyValue("duration", duration)
+                    .log("Request Completed");
+
+
+
+
 
             // Optional cleanup
             SecurityContextHolder.clearContext();
