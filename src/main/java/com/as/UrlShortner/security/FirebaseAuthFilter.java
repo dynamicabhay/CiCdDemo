@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.java.Log;
 import lombok.extern.log4j.Log4j;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -24,24 +25,31 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException,IOException {
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
+
         long startTime = System.currentTimeMillis();
         String method = request.getMethod();
         String endpoint = request.getRequestURI();
 
         try {
-            log.atInfo()
-                    .addKeyValue("event", "REQUEST_START")
-                    .addKeyValue("endpoint", endpoint)
-                    .addKeyValue("method", method)
-                    .log("Request started");
+            // 🔵 REQUEST START
+            MDC.put("event", "REQUEST_START");
+            MDC.put("endpoint", endpoint);
+            MDC.put("method", method);
 
+            log.info("Request started");
+
+            MDC.clear();
 
             String header = request.getHeader("Authorization");
+
             if (header != null && header.startsWith("Bearer ")) {
                 String token = header.substring(7);
+
                 try {
                     FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
+
                     String uid = decodedToken.getUid();
                     String email = decodedToken.getEmail();
 
@@ -50,61 +58,70 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
 
                     SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                    // AUTH SUCCESS
-                    log.atInfo()
-                            .addKeyValue("event", "AUTH_SUCCESS")
-                            .addKeyValue("userId", uid)
-                            .addKeyValue("email", email)
-                            .log("Authentication successful");
+                    // 🟢 AUTH SUCCESS
+                    MDC.put("event", "AUTH_SUCCESS");
+                    MDC.put("userId", uid);
+                    MDC.put("email", email);
+
+                    log.info("Authentication successful");
+
+                    MDC.clear();
 
                 } catch (Exception e) {
-                    //  AUTH FAILURE
-                    log.atWarn()
-                            .addKeyValue("event", "AUTH_FAILURE")
-                            .addKeyValue("errorType", e.getClass().getSimpleName())
-                            .addKeyValue("error_message", e.getMessage())
-                            .log("Authentication failed");
+
+                    // 🔴 AUTH FAILURE
+                    MDC.put("event", "AUTH_FAILURE");
+                    MDC.put("errorType", e.getClass().getSimpleName());
+                    MDC.put("error_message", e.getMessage());
+
+                    log.warn("Authentication failed");
+
+                    MDC.clear();
 
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     return;
                 }
-            }else{
-                //  NO TOKEN (optional depending on your design)
-                log.atWarn()
-                        .addKeyValue("event", "AUTH_HEADER_MISSING")
-                        .log("Missing or invalid Authorization header");
 
+            } else {
+                // ⚠️ NO HEADER
+                MDC.put("event", "AUTH_HEADER_MISSING");
 
+                log.warn("Missing or invalid Authorization header");
+
+                MDC.clear();
             }
 
             filterChain.doFilter(request, response);
+
         } catch (Exception ex) {
-            // 🔴 REQUEST FAILURE (catch anything unexpected)
-            log.atError()
-                    .addKeyValue("event", "REQUEST_FAILED")
-                    .addKeyValue("endpoint", endpoint)
-                    .addKeyValue("errorType", ex.getClass().getSimpleName())
-                    .addKeyValue("error_message", ex.getMessage())
-                    .log("Request Failed", ex);
+
+            // 🔴 REQUEST FAILURE
+            MDC.put("event", "REQUEST_FAILED");
+            MDC.put("endpoint", endpoint);
+            MDC.put("errorType", ex.getClass().getSimpleName());
+            MDC.put("error_message", ex.getMessage());
+
+            log.error("Request Failed", ex);
+
+            MDC.clear();
+
             throw ex;
-        }
-        finally {
+
+        } finally {
+
             long duration = System.currentTimeMillis() - startTime;
 
-            //  EXIT LOG (always runs)
-            log.atInfo()
-                    .addKeyValue("event", "REQUEST_COMPLETED")
-                    .addKeyValue("endpoint", endpoint)
-                    .addKeyValue("method", method)
-                    .addKeyValue("status", response.getStatus())
-                    .addKeyValue("duration", duration)
-                    .log("Request Completed");
+            // 🔵 REQUEST COMPLETED
+            MDC.put("event", "REQUEST_COMPLETED");
+            MDC.put("endpoint", endpoint);
+            MDC.put("method", method);
+            MDC.put("status", String.valueOf(response.getStatus()));
+            MDC.put("duration", String.valueOf(duration));
 
+            log.info("Request completed");
 
+            MDC.clear();
 
-
-
-            // Optional cleanup
             SecurityContextHolder.clearContext();
         }
     }
