@@ -13,9 +13,11 @@ COPY target/*.jar app.jar
 COPY opentelemetry-javaagent.jar .
 
 # Set environment variable to load the agent automatically
-ENV JAVA_TOOL_OPTIONS="-javaagent:/app/opentelemetry-javaagent.jar"
+ENV JAVA_TOOL_OPTIONS="-javaagent:/app/opentelemetry-javaagent.jar \
+-Dotel.instrumentation.logback-appender.experimental.capture-attributes=true \
+-Dspring.profiles.active=prod"
 
 # Expose the application port (adjust if your app uses a different one)
 EXPOSE 8080
 # Define the entrypoint — run the JAR
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
