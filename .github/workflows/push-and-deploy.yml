@@ -3,6 +3,13 @@ name: Push Image and Deploy
 on:
   push:
     branches: [ master,development ]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to deploy (e.g., latest, v1.2.3)'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   docker-deploy:
@@ -14,16 +21,21 @@ jobs:
       CONTAINER_NAME: distroless-app-java
       SECRET_PATH_VM: /home/isagi/.secrets
       SECRET_PATH_CON: /app/.secrets
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        # Only needed if we are going to build (when no tag provided)
+        if: ${{ github.event.inputs.image_tag == '' }}
 
       - name: Package application
         run: mvn package -DskipTests
+        if: ${{ github.event.inputs.image_tag == '' }}
 
       - name: Download OpenTelemetry Java Agent
         run: |
           curl -L -o opentelemetry-javaagent.jar https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
+        if: ${{ github.event.inputs.image_tag == '' }}
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -31,34 +43,44 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Use short SHA
+      - name: Determine image tag
         id: meta
-        run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        run: |
+          if [ -z "${{ github.event.inputs.image_tag }}" ]; then
+            echo "tag=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+            echo "build_needed=true" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
+            echo "build_needed=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set up QEMU (for cross-arch builds)
         uses: docker/setup-qemu-action@v3
+        if: steps.meta.outputs.build_needed == 'true'
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        if: steps.meta.outputs.build_needed == 'true'
 
       - name: Build & Push Multi-Arch Docker Image
         env:
-          SHORT_SHA: ${{ steps.meta.outputs.short_sha }}
+          TAG: ${{ steps.meta.outputs.tag }}
         run: |
-          echo "🔧 Building and pushing image: $IMAGE_NAME:$SHORT_SHA"
+          echo "🔧 Building and pushing image: $IMAGE_NAME:$TAG"
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
-            --tag $IMAGE_NAME:$SHORT_SHA \
+            --tag $IMAGE_NAME:$TAG \
             --push \
             .
+        if: steps.meta.outputs.build_needed == 'true'
 
       - name: Display build summary
-        run: |
-          echo "✅ image created successfully & pushed to dockerHub !!"
+        run: echo "✅ image created successfully & pushed to dockerHub !!"
+        if: steps.meta.outputs.build_needed == 'true'
 
       - name: Deploy on Remote Server via SSH
         env:
-          SHORT_SHA: ${{ steps.meta.outputs.short_sha }}
+          SHORT_SHA: ${{ steps.meta.outputs.tag }}
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SERVER_IP }}
