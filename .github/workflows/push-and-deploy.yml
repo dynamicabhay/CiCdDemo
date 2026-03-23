@@ -111,7 +111,7 @@ jobs:
               -e OTEL_EXPORTER_PROMETHEUS_PORT=9464 \
               -e OTEL_TRACES_EXPORTER=none \
               -e OTEL_LOGS_EXPORTER=otlp \
-              -e OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://otel-collector:4318/v1/logs \
+              -e OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://loki:3100/otlp/v1/logs \
               -e OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf \
               $IMAGE_NAME:$SHORT_SHA
 
