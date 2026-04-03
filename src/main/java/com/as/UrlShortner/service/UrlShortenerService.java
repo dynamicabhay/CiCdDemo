@@ -26,8 +26,9 @@ public class UrlShortenerService {
     EntityManager entityManager;
     private StringRedisTemplate redisTemplate;
     private final IdGeneratorService idGeneratorService;
+    private final URLCache urlCache;
 
-    public UrlShortenerService(Base62 encoder,@Value("${server.domain}") String domain,UrlMappingRepository urlMappingRepository,EntityManager entityManager,StringRedisTemplate redisTemplate,IdGeneratorService idGeneratorService){
+    public UrlShortenerService(Base62 encoder,@Value("${server.domain}") String domain,UrlMappingRepository urlMappingRepository,EntityManager entityManager,StringRedisTemplate redisTemplate,IdGeneratorService idGeneratorService,URLCache urlCache){
 
         this.encoder = encoder;
         this.urlMappingRepository = urlMappingRepository;
@@ -35,6 +36,7 @@ public class UrlShortenerService {
         this.entityManager = entityManager;
         this.redisTemplate = redisTemplate;
         this.idGeneratorService = idGeneratorService;
+        this.urlCache = urlCache;
     }
 
     @Transactional
@@ -72,76 +74,37 @@ public class UrlShortenerService {
         }
     }
 
-    @Transactional
+
     public String getUrl(String key) throws KeyNotFoundException {
 
         if (key == null || key.isBlank())
-            throw new RuntimeException("URL not found");
+            throw new KeyNotFoundException(key);
 
         String redisKey = "URL:" + key;
 
         try {
 
-            String result = redisTemplate.opsForValue().get(redisKey);
+            String result = urlCache.getUrl(key);
 
-            // 🟢 Cache HIT
-            if (result != null && !"NOT_FOUND".equalsIgnoreCase(result)) {
-
-                log.atInfo()
-                        .addKeyValue("event", "CACHE_HIT")
-                        .addKeyValue("shortCode", key)
-                        .log("Cache hit");
-
-                return result;
-            }
-
-            // 🔴 Cached NOT_FOUND
-            if ("NOT_FOUND".equalsIgnoreCase(result)) {
-
-                log.atInfo()
-                        .addKeyValue("event", "CACHE_NEGATIVE_HIT")
-                        .addKeyValue("shortCode", key)
-                        .log("Cache negative hit");
-
-                return null;
-            }
-
-            // 🟡 Cache MISS
-            log.atInfo()
-                    .addKeyValue("event", "CACHE_MISS")
-                    .addKeyValue("shortCode", key)
-                    .log("Cache miss");
+            if(result != null) return result;
 
             // 🔄 Fetch from DB
             return urlMappingRepository.findByShortKey(key)
-                    .map(url -> {
-
-                        redisTemplate.opsForValue()
-                                .set(redisKey, url.getOriginalUrl(), 24, TimeUnit.HOURS);
-
-                        log.atInfo()
-                                .addKeyValue("event", "DB_HIT")
-                                .addKeyValue("shortCode", key)
-                                .log("DB hit and cache updated");
-
-                        return url.getOriginalUrl();
+                    .map(mappings -> {
+                        log.info("event=DB_HIT for shortKey={}",key);
+                        String originalUrl = mappings.getOriginalUrl();
+                        urlCache.putUrl(key,originalUrl,24,TimeUnit.HOURS);
+                        return originalUrl;
                     })
-                    .orElseGet(() -> {
-
-                        redisTemplate.opsForValue()
-                                .set(redisKey, "NOT_FOUND", 1, TimeUnit.HOURS);
-
-                        log.atWarn()
-                                .addKeyValue("event", "URL_NOT_FOUND")
-                                .addKeyValue("shortCode", key)
-                                .log("URL not found");
-
-                        return null;
+                    .orElseThrow(() -> {
+                        urlCache.putUrl(key,"NOT_FOUND",1,TimeUnit.HOURS);
+                        return new KeyNotFoundException(key);
                     });
+
 
         } catch (Exception ex) {
 
-            // 🔴 Redis / DB failure
+            // 🔴 DB failure
             log.atError()
                     .addKeyValue("event", "GET_URL_FAILURE")
                     .addKeyValue("shortCode", key)
