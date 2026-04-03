@@ -27,7 +27,7 @@ public class URLCache {
     public String getUrl(String key){
         try{
             String url = redisTemplate.opsForValue().get(key);
-
+           // log.info("URL ==== " + url);
             // cache hit
             if(url != null && !url.isBlank() && !"NOT_FOUND".equalsIgnoreCase(url)) {
                 log.info("event=CACHE_HIT shortCode={}", key);
@@ -35,7 +35,10 @@ public class URLCache {
             }
 
             // negative cache
-            if("NOT_FOUND".equalsIgnoreCase(url)) throw new KeyNotFoundException(key);
+            if("NOT_FOUND".equalsIgnoreCase(url)){
+                log.info("Negative Cache Hit shortCode={}", key);
+                return url;
+            }
 
             log.info("event=CACHE_MISS shortCode={}",key);
 

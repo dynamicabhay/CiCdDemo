@@ -35,26 +35,19 @@ public class RedisRateLimit {
             boolean allowed = "1".equals(result);
 
             // ✅ Decision log
-            log.atInfo()
-                    .addKeyValue("event", "RATE_LIMIT_DECISION")
-                    .addKeyValue("prefix", prefix)
-                    .addKeyValue("identifier", identifier)
-                    .addKeyValue("allowed", allowed)
-                    .addKeyValue("limit", limit)
-                    .addKeyValue("windowSize", windowSize)
-                    .log("Rate limit decision");
-
+            log.info("event=RATE_LIMIT_DECISION prefix={} identifier={} allowed={} limit={} windowSize={}",prefix,identifier,allowed,limit,windowSize);
             return allowed;
 
         } catch (Exception ex) {
             // 🔴 Redis failure
-            log.atError()
-                    .addKeyValue("event", "REDIS_FAILURE")
-                    .addKeyValue("prefix", prefix)
-                    .addKeyValue("identifier", identifier)
-                    .addKeyValue("errorType", ex.getClass().getSimpleName())
-                    .addKeyValue("error_message", ex.getMessage())
-                    .log("Redis rate limit execution failed", ex);
+            log.info(
+                    "event=REDIS_FAILURE prefix={} identifier={} errorType={} error_message={} - Redis rate limit execution failed",
+                    prefix,
+                    identifier,
+                    ex.getClass().getSimpleName(),
+                    ex.getMessage(),
+                    ex
+            );
 
             throw ex;
         }
@@ -62,14 +55,14 @@ public class RedisRateLimit {
 
     private boolean checkFallback(String identifier, String prefix, long windowSize, long limit, Exception ex) {
 
-        log.atError()
-                .addKeyValue("event", "REDIS_CB_FALLBACK")
-                .addKeyValue("prefix", prefix)
-                .addKeyValue("identifier", identifier)
-                .addKeyValue("fallback", "ALLOW")
-                .addKeyValue("errorType", ex.getClass().getSimpleName())
-                .addKeyValue("error_message", ex.getMessage())
-                .log("Redis circuit breaker triggered - allowing request");
+        log.info(
+                "event=REDIS_CB_FALLBACK prefix={} identifier={} fallback=ALLOW errorType={} error_message={} - Redis circuit breaker triggered - allowing request",
+                prefix,
+                identifier,
+                ex.getClass().getSimpleName(),
+                ex.getMessage(),
+                ex
+        );
 
         return true; // fail open
     }

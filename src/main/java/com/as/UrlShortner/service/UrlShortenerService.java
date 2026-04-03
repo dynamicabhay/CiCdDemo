@@ -51,11 +51,7 @@ public class UrlShortenerService {
             UrlMappings entityWithId = urlMappingRepository.save(newUrl);
 
             // ✅ URL CREATED
-            log.atInfo()
-                    .addKeyValue("event", "URL_CREATED")
-                    .addKeyValue("shortCode", key)
-                    .log("Short URL created");
-
+            log.info("event=URL_CREATED shortCode={}",key);
             return UrlShortnerResponse.builder()
                     .shortUrl(baseUrl + key)
                     .build();
@@ -63,13 +59,7 @@ public class UrlShortenerService {
         } catch (Exception ex) {
 
             // 🔴 DB FAILURE
-            log.atError()
-                    .addKeyValue("event", "URL_CREATION_FAILED")
-                    .addKeyValue("originalUrl", request.getUrl())
-                    .addKeyValue("errorType", ex.getClass().getSimpleName())
-                    .addKeyValue("error_message", ex.getMessage())
-                    .log("URL not stored in DB", ex);
-
+            log.error("event=URL_CREATION_FAILED originalUrl={} error_message={}",request.getUrl(),ex.getMessage());
             throw ex;
         }
     }
@@ -77,43 +67,29 @@ public class UrlShortenerService {
 
     public String getUrl(String key) throws KeyNotFoundException {
 
-        if (key == null || key.isBlank())
-            throw new KeyNotFoundException(key);
+            if (key == null || key.isBlank())  throw new KeyNotFoundException(key);
 
-        String redisKey = "URL:" + key;
+            String redisKey = "URL:" + key;
 
-        try {
+            String result = urlCache.getUrl(redisKey);
 
-            String result = urlCache.getUrl(key);
-
+            if("NOT_FOUND".equalsIgnoreCase(result)) throw new KeyNotFoundException(key);
             if(result != null) return result;
 
+            //log.warn("going to hit db");
             // 🔄 Fetch from DB
             return urlMappingRepository.findByShortKey(key)
                     .map(mappings -> {
                         log.info("event=DB_HIT for shortKey={}",key);
                         String originalUrl = mappings.getOriginalUrl();
-                        urlCache.putUrl(key,originalUrl,24,TimeUnit.HOURS);
+                        urlCache.putUrl(redisKey,originalUrl,24,TimeUnit.HOURS);
                         return originalUrl;
                     })
                     .orElseThrow(() -> {
-                        urlCache.putUrl(key,"NOT_FOUND",1,TimeUnit.HOURS);
+                        urlCache.putUrl(redisKey,"NOT_FOUND",1,TimeUnit.HOURS);
                         return new KeyNotFoundException(key);
                     });
 
-
-        } catch (Exception ex) {
-
-            // 🔴 DB failure
-            log.atError()
-                    .addKeyValue("event", "GET_URL_FAILURE")
-                    .addKeyValue("shortCode", key)
-                    .addKeyValue("errorType", ex.getClass().getSimpleName())
-                    .addKeyValue("error_message", ex.getMessage())
-                    .log("Get URL failed", ex);
-
-            throw new RuntimeException(ex);
-        }
     }
 
 

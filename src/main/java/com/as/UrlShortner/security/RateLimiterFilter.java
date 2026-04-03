@@ -47,34 +47,21 @@ public class RateLimiterFilter extends OncePerRequestFilter {
 
             if (!allowed) {
                 // 🔴 RATE LIMIT BLOCK
-                log.atWarn()
-                        .addKeyValue("event", "RATE_LIMIT_BLOCK")
-                        .addKeyValue("endpoint", endpoint)
-                        .addKeyValue("method", method)
-                        .addKeyValue("status", 429)
-                        .log("Rate limit exceeded");
+
+                log.warn("event=RATE_LIMIT_BLOCK method={} endpoint={} status={}", method,endpoint,"NOT_ALLOWED");
 
                 sendTooManyRequests(response);
                 return;
             }
 
             // ✅ RATE LIMIT PASSED
-            log.atInfo()
-                    .addKeyValue("event", "RATE_LIMIT_CHECK")
-                    .addKeyValue("endpoint", endpoint)
-                    .addKeyValue("method", method)
-                    .addKeyValue("status", "ALLOWED")
-                    .log("Rate limit check passed");
+            log.warn("event=RATE_LIMIT_PASS method={} endpoint={} status={}", method,endpoint,"ALLOWED");
 
             filterChain.doFilter(request, response);
 
         } catch (Exception ex) {
             // 🔴 Unexpected failure
-            log.atError()
-                    .addKeyValue("event", "RATE_LIMIT_ERROR")
-                    .addKeyValue("endpoint", endpoint)
-                    .addKeyValue("errorType", ex.getClass().getSimpleName())
-                    .log("Rate limiter unexpected error", ex);
+            log.warn("event=RATE_LIMIT_ERROR method={} endpoint={} errorType={}", method,endpoint,ex.getClass().getSimpleName());
 
             throw ex;
         }

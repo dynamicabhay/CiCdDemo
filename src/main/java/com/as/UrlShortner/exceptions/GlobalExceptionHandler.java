@@ -4,6 +4,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
     // Helper method to create a consistent error response structure
     private ResponseEntity<Map<String, Object>> createErrorResponse(HttpStatus status, String message, String path) {
@@ -61,7 +63,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(KeyNotFoundException.class)
-    public ResponseEntity<Map<String,Object>> handleAliasAlreadyTakenException(KeyNotFoundException ex, HttpServletRequest request){
+    public ResponseEntity<Map<String,Object>> handleKeyNotFoundException(KeyNotFoundException ex, HttpServletRequest request){
         return createErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
     }
 
