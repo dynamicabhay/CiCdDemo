@@ -40,7 +40,7 @@ public class RateLimiterService {
         if (isRedirectionRequest(requestURI)) {
 
             String clientId = getClientIp(request);
-            System.out.println("clientId : " + clientId);
+            //System.out.println("clientId : " + clientId);
             if(!redisRateLimit.check(clientId,"redirect",rateLimitRedirectionWindowSize,rateLimitRedirectionAllowedRequests)){
                 return false;
             }

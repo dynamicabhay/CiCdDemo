@@ -34,13 +34,7 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
 
         try {
             // 🔵 REQUEST START
-            MDC.put("event", "REQUEST_START");
-            MDC.put("endpoint", endpoint);
-            MDC.put("method", method);
-
-            log.info("Request started");
-
-            MDC.clear();
+            log.info("event=REQUEST_START endpoint={} method={} - Request started", endpoint, method);
 
             String header = request.getHeader("Authorization");
 
@@ -58,25 +52,15 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
 
                     SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                    // 🟢 AUTH SUCCESS
-                    MDC.put("event", "AUTH_SUCCESS");
-                    MDC.put("userId", uid);
-                    MDC.put("email", email);
+                    log.info("event=AUTH_SUCCESS userId={} email={} - Authentication successful", uid, email);
 
-                    log.info("Authentication successful");
 
-                    MDC.clear();
 
                 } catch (Exception e) {
 
-                    // 🔴 AUTH FAILURE
-                    MDC.put("event", "AUTH_FAILURE");
-                    MDC.put("errorType", e.getClass().getSimpleName());
-                    MDC.put("error_message", e.getMessage());
-
-                    log.warn("Authentication failed");
-
-                    MDC.clear();
+                    log.warn("AUTH_FAILURE errorType={} error_message={}",
+                            e.getClass().getSimpleName(),
+                            e.getMessage());
 
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     return;
@@ -84,11 +68,7 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
 
             } else {
                 // ⚠️ NO HEADER
-                MDC.put("event", "AUTH_HEADER_MISSING");
-
-                log.warn("Missing or invalid Authorization header");
-
-                MDC.clear();
+                log.warn("AUTH_HEADER_MISSING: Missing or invalid Authorization header");
             }
 
             filterChain.doFilter(request, response);
@@ -96,14 +76,11 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
         } catch (Exception ex) {
 
             // 🔴 REQUEST FAILURE
-            MDC.put("event", "REQUEST_FAILED");
-            MDC.put("endpoint", endpoint);
-            MDC.put("errorType", ex.getClass().getSimpleName());
-            MDC.put("error_message", ex.getMessage());
-
-            log.error("Request Failed", ex);
-
-            MDC.clear();
+            log.error("REQUEST_FAILED endpoint={} errorType={} error_message={}",
+                    endpoint,
+                    ex.getClass().getSimpleName(),
+                    ex.getMessage(),
+                    ex);
 
             throw ex;
 
@@ -112,15 +89,11 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
             long duration = System.currentTimeMillis() - startTime;
 
             // 🔵 REQUEST COMPLETED
-            MDC.put("event", "REQUEST_COMPLETED");
-            MDC.put("endpoint", endpoint);
-            MDC.put("method", method);
-            MDC.put("status", String.valueOf(response.getStatus()));
-            MDC.put("duration", String.valueOf(duration));
-
-            log.info("Request completed");
-
-            MDC.clear();
+            log.info("REQUEST_COMPLETED endpoint={} method={} status={} duration={}",
+                    endpoint,
+                    method,
+                    response.getStatus(),
+                    duration);
 
             SecurityContextHolder.clearContext();
         }
