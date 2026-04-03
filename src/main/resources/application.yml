@@ -53,7 +53,7 @@ rate:
             window:
                 size: 86400
 server:
-    domain: tiny-lane.duckdns.org:8081
+    domain: tiny-lane.duckdns.org
     port: 8080
 
 
