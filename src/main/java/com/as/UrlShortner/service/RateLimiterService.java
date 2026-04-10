@@ -33,6 +33,9 @@ public class RateLimiterService {
         this.redisRateLimit = redisRateLimit;
     }
 
+    public record RateLimitPolicy(String prefix, long windowSizeSeconds, long allowedRequests) {
+    }
+
     public boolean isAllowed(HttpServletRequest request, HttpServletResponse response){
         String requestURI = request.getRequestURI();
 
@@ -56,6 +59,17 @@ public class RateLimiterService {
         }
         return true;
 
+    }
+
+    public RateLimitPolicy getPolicy(HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        if (isRedirectionRequest(requestURI)) {
+            return new RateLimitPolicy("redirect", rateLimitRedirectionWindowSize, rateLimitRedirectionAllowedRequests);
+        }
+        if (isShortenRequest(requestURI)) {
+            return new RateLimitPolicy("shorten", rateLimitShortenWindowSize, rateLimitShortenAllowedRequests);
+        }
+        return null;
     }
 
 

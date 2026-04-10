@@ -50,7 +50,7 @@ public class RateLimiterFilter extends OncePerRequestFilter {
 
                 log.warn("event=RATE_LIMIT_BLOCK method={} endpoint={} status={}", method,endpoint,"NOT_ALLOWED");
 
-                sendTooManyRequests(response);
+                sendTooManyRequests(request, response);
                 return;
             }
 
@@ -67,7 +67,21 @@ public class RateLimiterFilter extends OncePerRequestFilter {
         }
     }
 
-    private void sendTooManyRequests(HttpServletResponse response) throws IOException {
+    private void sendTooManyRequests(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        RateLimiterService.RateLimitPolicy policy = rateLimiterService.getPolicy(request);
+
+        if (policy != null) {
+            long nowEpochSeconds = System.currentTimeMillis() / 1000;
+            long windowSizeSeconds = policy.windowSizeSeconds();
+            long resetEpochSeconds = ((nowEpochSeconds / windowSizeSeconds) * windowSizeSeconds) + windowSizeSeconds;
+            long retryAfterSeconds = Math.max(0, resetEpochSeconds - nowEpochSeconds);
+
+            response.setHeader("Retry-After", String.valueOf(retryAfterSeconds));
+            response.setHeader("X-RateLimit-Limit", String.valueOf(policy.allowedRequests()));
+            response.setHeader("X-RateLimit-Remaining", "0");
+            response.setHeader("X-RateLimit-Reset", String.valueOf(resetEpochSeconds));
+        }
+
         response.setStatus(429);
         response.getWriter().write("Too many requests. Please try again later.");
     }
