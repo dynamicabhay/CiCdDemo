@@ -2,7 +2,6 @@ package com.as.UrlShortner.security.config;
 
 import com.as.UrlShortner.exceptions.CustomAuthenticationEntryPoint;
 import com.as.UrlShortner.security.FirebaseAuthFilter;
-import com.as.UrlShortner.security.JwtAuthFilter;
 import com.as.UrlShortner.security.RateLimiterFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,13 +30,12 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    JwtAuthFilter jwtAuthFilter;
-    UserDetailsService userDetailsService;
-    CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-    FirebaseAuthFilter firebaseAuthFilter;
-    RateLimiterFilter rateLimiterFilter;
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserDetailsService userDetailsService,CustomAuthenticationEntryPoint customAuthenticationEntryPoint,FirebaseAuthFilter firebaseAuthFilter,RateLimiterFilter rateLimiterFilter){
-        this.jwtAuthFilter = jwtAuthFilter;
+    private final UserDetailsService userDetailsService;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final FirebaseAuthFilter firebaseAuthFilter;
+    private final RateLimiterFilter rateLimiterFilter;
+
+    public SecurityConfig(UserDetailsService userDetailsService, CustomAuthenticationEntryPoint customAuthenticationEntryPoint, FirebaseAuthFilter firebaseAuthFilter, RateLimiterFilter rateLimiterFilter){
         this.userDetailsService = userDetailsService;
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
         this.firebaseAuthFilter = firebaseAuthFilter;
@@ -53,7 +51,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Disable CSRF protection, common for stateless APIs
                 .authorizeHttpRequests(auth -> auth
                         //.requestMatchers("/public/**").permitAll()
-                        .requestMatchers("/shorten/**").authenticated()
+                        .requestMatchers("/shorten", "/shorten/**", "/flush").authenticated()
                         .anyRequest().permitAll()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(customAuthenticationEntryPoint))
@@ -87,7 +85,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*"));
+        configuration.setAllowedOrigins(List.of("https://tiny-lane.duckdns.org"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(false);
