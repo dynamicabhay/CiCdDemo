@@ -14,6 +14,8 @@ public class IdGeneratorService {
     private JdbcTemplate jdbcTemplate;
     @Value("${id.range.increment.window.size}")
     private long idRangeincrementWindowSize;
+    @Value("${id.range.increment.enabled:true}")
+    private boolean idRangeIncrementEnabled;
     private AtomicLong currentId;
     private volatile long maxId;
     //private String RANGE_UPDATE_QUERY = "UPDATE ID_RANGE_ALLOCATOR SET=CURRENT_MAX_ID+" + idRangeincrementWindowSize + " RETURNING CURRENT_MAX_ID ";
@@ -26,8 +28,14 @@ public class IdGeneratorService {
     @PostConstruct
     public void fetchIdRange(){
         try {
-            String sql = "UPDATE ID_RANGE_ALLOCATOR SET CURRENT_MAX_ID = CURRENT_MAX_ID + ? RETURNING CURRENT_MAX_ID";
-            this.maxId = jdbcTemplate.queryForObject(sql, Long.class, idRangeincrementWindowSize);
+            System.out.println("idRangeIncrementEnabled: " + idRangeIncrementEnabled);
+            if (idRangeIncrementEnabled) {
+                String sql = "UPDATE ID_RANGE_ALLOCATOR SET CURRENT_MAX_ID = CURRENT_MAX_ID + ? RETURNING CURRENT_MAX_ID";
+                this.maxId = jdbcTemplate.queryForObject(sql, Long.class, idRangeincrementWindowSize);
+            } else {
+                String sql = "SELECT CURRENT_MAX_ID FROM ID_RANGE_ALLOCATOR";
+                this.maxId = jdbcTemplate.queryForObject(sql, Long.class);
+            }
             this.currentId.set(maxId - idRangeincrementWindowSize + 1);
             //log.info("maxId & currentId are set: " + maxId + ", " + currentId.get());
         } catch (Exception e) {
@@ -42,6 +50,9 @@ public class IdGeneratorService {
         if(currentId.get() > maxId){
             synchronized (this){
                 if(currentId.get() > maxId){
+                    if (!idRangeIncrementEnabled) {
+                        throw new IllegalStateException("ID range exhausted while id.range.increment.enabled=false");
+                    }
                     fetchIdRange();
                 }
             }
