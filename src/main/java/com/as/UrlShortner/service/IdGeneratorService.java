@@ -28,7 +28,7 @@ public class IdGeneratorService {
     @PostConstruct
     public void fetchIdRange(){
         try {
-            System.out.println("idRangeIncrementEnabled: " + idRangeIncrementEnabled);
+            //System.out.println("idRangeIncrementEnabled: " + idRangeIncrementEnabled);
             if (idRangeIncrementEnabled) {
                 String sql = "UPDATE ID_RANGE_ALLOCATOR SET CURRENT_MAX_ID = CURRENT_MAX_ID + ? RETURNING CURRENT_MAX_ID";
                 this.maxId = jdbcTemplate.queryForObject(sql, Long.class, idRangeincrementWindowSize);
