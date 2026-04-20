@@ -30,9 +30,9 @@ public class runner implements CommandLineRunner {
 
     }
 
-    @PostConstruct
-    public void demo(){
-        System.out.println("######################### " + redisHost + " #################################");
-    }
+//    @PostConstruct
+//    public void demo(){
+//        System.out.println("######################### " + redisHost + " #################################");
+//    }
 
 }
